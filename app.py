@@ -1,17 +1,18 @@
-from flask import Flask, request, redirect, url_for, render_template
-from werkzeug.utils import secure_filename
 import os
-import summarizer
-import image_generator
-
-UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+import requests
+from flask import Flask, render_template, request, redirect, url_for
+from werkzeug.utils import secure_filename
+from PIL import Image, ImageDraw, ImageFont
+import base64
+from io import BytesIO
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# 디렉토리 존재 여부 확인 및 생성
+def ensure_directory_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 @app.route('/')
 def index():
@@ -19,26 +20,22 @@ def index():
 
 @app.route('/summarize', methods=['POST'])
 def summarize():
-    blog_url = request.form['blog_url']
-    if 'file' not in request.files:
-        return redirect(request.url)
+    blog_url = request.form['url']
     file = request.files['file']
-    if file.filename == '':
-        return redirect(request.url)
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-        summarized_text = summarizer.summarize_blog(blog_url)
-        return render_template('review.html', summarized_text=summarized_text, image_url=file_path)
-    return redirect(request.url)
 
-@app.route('/generate', methods=['POST'])
-def generate_image():
-    image_url = request.form['image_url']
-    texts = request.form.getlist('texts')
-    images = image_generator.generate_images(image_url, texts)
-    return render_template('result.html', images=images)
+    # 파일 저장 경로 확인 및 디렉토리 생성
+    ensure_directory_exists(app.config['UPLOAD_FOLDER'])
+
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+
+    # 블로그 내용 요약 (summarizer.py를 통해 호출)
+    summarized_text = summarize_blog(blog_url)
+
+    return render_template('review.html', text=summarized_text, image_path=file_path)
+
+# summarizer.py의 summarize_blog 함수 호출 코드 (필요 시 수정)
 
 if __name__ == '__main__':
     app.run(debug=True)
