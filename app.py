@@ -1,29 +1,17 @@
-from flask import Flask, request, render_template
-from PIL import Image, ImageDraw, ImageFont
-import textwrap
+from flask import Flask, request, redirect, url_for, render_template
+from werkzeug.utils import secure_filename
 import os
-import io
 import summarizer
-import base64
+import image_generator
+
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# 폰트 및 배경 이미지 경로
-font_path = "static/fonts/AppleSDGothicNeo.ttc"
-background_image_path = "static/images/background.png"
-
-def draw_text(draw, text, position, font, max_width, line_spacing):
-    """
-    주어진 텍스트를 이미지에 그립니다.
-    """
-    lines = textwrap.wrap(text, width=max_width)
-    y = position[1]
-    for line in lines:
-        bbox = draw.textbbox(position, line, font=font)
-        width, height = bbox[2] - bbox[0], bbox[3] - bbox[1]
-        draw.rectangle([position, (position[0] + width, y + height)], fill="black")
-        draw.text((position[0], y), line, font=font, fill="white")
-        y += height + line_spacing
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/')
 def index():
@@ -31,36 +19,26 @@ def index():
 
 @app.route('/summarize', methods=['POST'])
 def summarize():
-    blog_url = request.form['url']
-    summarized_text = summarizer.summarize_blog(blog_url, 9)
-    return render_template('review.html', summarized_text=summarized_text)
+    blog_url = request.form['blog_url']
+    if 'file' not in request.files:
+        return redirect(request.url)
+    file = request.files['file']
+    if file.filename == '':
+        return redirect(request.url)
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+        summarized_text = summarizer.summarize_blog(blog_url)
+        return render_template('review.html', summarized_text=summarized_text, image_url=file_path)
+    return redirect(request.url)
 
 @app.route('/generate', methods=['POST'])
 def generate_image():
-    summarized_text = request.form.getlist('summarized_text')
-    font_size = int(request.form['font_size'])
-    font = ImageFont.truetype(font_path, size=font_size)
-    images = []
-
-    for i, text in enumerate(summarized_text):
-        # 배경 이미지 불러오기
-        img = Image.open(background_image_path)
-        draw = ImageDraw.Draw(img)
-        
-        # 텍스트 줄간격 설정 (기존 줄간격의 2배)
-        line_spacing = font_size * 1.5
-
-        # 텍스트 그리기
-        draw_text(draw, text, (10, 10), font, max_width=60, line_spacing=line_spacing)
-
-        # 이미지 저장
-        output = io.BytesIO()
-        img.save(output, format='PNG')
-        output.seek(0)
-        img_base64 = base64.b64encode(output.getvalue()).decode('utf-8')
-        images.append(img_base64)
-
+    image_url = request.form['image_url']
+    texts = request.form.getlist('texts')
+    images = image_generator.generate_images(image_url, texts)
     return render_template('result.html', images=images)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000, debug=True)
+    app.run(debug=True)

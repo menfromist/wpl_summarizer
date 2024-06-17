@@ -1,17 +1,17 @@
-<!DOCTYPE html>
-<html>
-<head>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
     <title>Review Summarized Text</title>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Review Summarized Text</h1>
     <form action="/generate" method="post">
-        {% for sentence in summarized_text %}
-            <textarea name="summarized_text">{{ sentence }}</textarea><br>
-        {% endfor %}
-        <label for="font_size">Font Size:</label>
-        <input type="number" id="font_size" name="font_size" value="36">
-        <button type="submit">Generate Images</button>
+      <input type="hidden" name="image_url" value="{{ image_url }}">
+      {% for sentence in summarized_text %}
+        <textarea name="texts" rows="3" cols="60">{{ sentence }}</textarea><br><br>
+      {% endfor %}
+      <input type="submit" value="Generate Image">
     </form>
-</body>
+  </body>
 </html>

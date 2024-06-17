@@ -1,12 +1,17 @@
-<!DOCTYPE html>
-<html>
-<head>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
     <title>Generated Images</title>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Generated Images</h1>
-    {% for img in images %}
-        <img src="data:image/png;base64,{{ img }}" alt="Generated Image"><br>
-    {% endfor %}
-</body>
+    <div style="display: flex; flex-wrap: wrap;">
+      {% for img in images %}
+        <div style="margin: 10px;">
+          <img src="data:image/png;base64,{{ img|b64encode }}" alt="Generated Image" width="300">
+        </div>
+      {% endfor %}
+    </div>
+  </body>
 </html>

@@ -1,14 +1,17 @@
-<!DOCTYPE html>
-<html>
-<head>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
     <title>Blog Image Generator</title>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Blog Image Generator</h1>
-    <form action="/summarize" method="post">
-        <label for="url">Blog URL:</label>
-        <input type="text" id="url" name="url">
-        <button type="submit">Summarize</button>
+    <form action="/summarize" method="post" enctype="multipart/form-data">
+      <label for="blog_url">Blog URL:</label>
+      <input type="text" id="blog_url" name="blog_url"><br><br>
+      <label for="file">Upload Image:</label>
+      <input type="file" id="file" name="file"><br><br>
+      <input type="submit" value="Submit">
     </form>
-</body>
+  </body>
 </html>
