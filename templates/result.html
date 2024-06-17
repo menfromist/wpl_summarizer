@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generated Images</title>
+</head>
+<body>
+    <h1>Generated Images</h1>
+    {% for img in images %}
+        <img src="data:image/png;base64,{{ img }}" alt="Generated Image"><br>
+    {% endfor %}
+</body>
+</html>
